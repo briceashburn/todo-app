@@ -2,30 +2,36 @@ package com.brice.todoapp.controllers;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.brice.todoapp.dto.RegistrationRequest;
 import com.brice.todoapp.models.User;
 import com.brice.todoapp.repositories.UserRepository;
 
+import jakarta.validation.Valid;
+
 @RestController
+@Validated
 public class RegisterController {
 
     private static final Logger LOG = LoggerFactory.getLogger(RegisterController.class);
+    private static final String STATUS_KEY = "status";
+    private static final String MESSAGE_KEY = "message";
+    private static final String CODE_KEY = "code";
+    private static final String USERNAME_KEY = "username";
+    private static final String EMAIL_KEY = "email";
+    private static final String STATUS_ERROR = "error";
+    private static final String STATUS_SUCCESS = "success";
+
     private final PasswordEncoder passwordEncoder;
-
-    // Regex pattern for validating email format
-    private static final Pattern EMAIL_REGEX = Pattern.compile(
-        "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$"
-    );
-
     private final UserRepository userRepository;
 
     public RegisterController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -34,79 +40,46 @@ public class RegisterController {
     }
 
     @PostMapping("/api/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> payload) {
-        String username = payload.get("username");
-        String password = payload.get("password");
-        String email = payload.get("email");
-
-        if (username == null || password == null) {
-            LOG.warn("Missing required fields: username or password");
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Registration failed: Username and password are required");
-            errorResponse.put("code", "MISSING_CREDENTIALS");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-
-        // Check if username contains spaces
-        if (username.contains(" ")) {
-            LOG.warn("Username contains spaces: {}", username);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Registration failed: Username cannot contain spaces");
-            errorResponse.put("code", "INVALID_USERNAME_FORMAT");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-
+    public ResponseEntity<Map<String, Object>> register(@Valid @RequestBody RegistrationRequest request) {
         // Check if username already exists
-        if (userRepository.findByUsername(username).isPresent()) {
-            LOG.warn("Username already exists: {}", username);
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            LOG.warn("Username already exists: {}", request.getUsername());
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Registration failed: Username is already taken");
-            errorResponse.put("code", "USERNAME_EXISTS");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-
-        // Validate email format if provided
-        if (email != null && !EMAIL_REGEX.matcher(email).matches()) {
-            LOG.warn("Invalid email format: {}", email);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Registration failed: Invalid email format");
-            errorResponse.put("code", "INVALID_EMAIL_FORMAT");
+            errorResponse.put(STATUS_KEY, STATUS_ERROR);
+            errorResponse.put(MESSAGE_KEY, "Registration failed: Username is already taken");
+            errorResponse.put(CODE_KEY, 400);
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Check if email already exists (only if provided)
-        if (email != null && userRepository.findByEmail(email).isPresent()) {
-            LOG.warn("Email already exists: {}", email);
+        if (request.getEmail() != null && userRepository.findByEmail(request.getEmail()).isPresent()) {
+            LOG.warn("Email already exists: {}", request.getEmail());
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Registration failed: Email is already registered");
-            errorResponse.put("code", "EMAIL_EXISTS");
+            errorResponse.put(STATUS_KEY, STATUS_ERROR);
+            errorResponse.put(MESSAGE_KEY, "Registration failed: Email is already registered");
+            errorResponse.put(CODE_KEY, 400);
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Hash the password before saving
-        String hashedPassword = passwordEncoder.encode(password);
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
 
         User user = new User();
-        user.setUsername(username);
+        user.setUsername(request.getUsername());
         user.setPassword(hashedPassword);
-        user.setEmail(email);
+        user.setEmail(request.getEmail());
 
         userRepository.save(user);
 
-        LOG.info("User registered: {}", username);
+        LOG.info("User registered: {}", request.getUsername());
         Map<String, Object> response = new HashMap<>();
-        response.put("status", "success");
-        response.put("message", "Registration successful");
-        response.put("username", username);
-        if (email != null) {
-            response.put("email", email);
+        response.put(STATUS_KEY, STATUS_SUCCESS);
+        response.put(MESSAGE_KEY, "Registration successful");
+        response.put(USERNAME_KEY, request.getUsername());
+        response.put(CODE_KEY, 200);
+        if (request.getEmail() != null) {
+            response.put(EMAIL_KEY, request.getEmail());
         }
         return ResponseEntity.ok(response);
     }
-
 }

@@ -8,17 +8,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.brice.todoapp.dto.LoginRequest;
 import com.brice.todoapp.models.User;
 import com.brice.todoapp.repositories.UserRepository;
 import com.brice.todoapp.security.JwtService;
 
+import jakarta.validation.Valid;
+
 @RestController
+@Validated
 public class LoginController {
     private static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
+    private static final String STATUS_KEY = "status";
+    private static final String MESSAGE_KEY = "message";
+    private static final String CODE_KEY = "code";
+    private static final String TOKEN_KEY = "token";
+    private static final String USERNAME_KEY = "username";
+    private static final String STATUS_ERROR = "error";
+    private static final String STATUS_SUCCESS = "success";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -30,36 +43,25 @@ public class LoginController {
     }
 
     @PostMapping("/api/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
-        String username = payload.get("username");
-        String password = payload.get("password");
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
+        Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
 
-        if (username == null || password == null) {
-            LOG.warn("Missing required fields: username or password");
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Authentication failed: Username and password are required");
-            errorResponse.put("code", "MISSING_CREDENTIALS");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-
-        Optional<User> userOpt = userRepository.findByUsername(username);
-
-        if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
-            LOG.info("User logged in: {}", username);
-            String token = jwtService.generateToken(username);
+        if (userOpt.isPresent() && passwordEncoder.matches(request.getPassword(), userOpt.get().getPassword())) {
+            LOG.info("User logged in: {}", request.getUsername());
+            String token = jwtService.generateToken(request.getUsername());
             Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("message", "Authentication successful");
-            response.put("token", token);
-            response.put("username", username);
+            response.put(STATUS_KEY, STATUS_SUCCESS);
+            response.put(MESSAGE_KEY, "Authentication successful");
+            response.put(TOKEN_KEY, token);
+            response.put(USERNAME_KEY, request.getUsername());
+            response.put(CODE_KEY, 200);
             return ResponseEntity.ok(response);
         } else {
-            LOG.warn("Invalid login attempt for username: {}", username);
+            LOG.warn("Invalid login attempt for username: {}", request.getUsername());
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("message", "Authentication failed: Invalid username or password");
-            errorResponse.put("code", "INVALID_CREDENTIALS");
+            errorResponse.put(STATUS_KEY, STATUS_ERROR);
+            errorResponse.put(MESSAGE_KEY, "Authentication failed: Invalid username or password");
+            errorResponse.put(CODE_KEY, 401);
             return ResponseEntity.status(401).body(errorResponse);
         }
     }
