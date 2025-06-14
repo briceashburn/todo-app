@@ -36,7 +36,11 @@ public class LoginController {
 
         if (username == null || password == null) {
             LOG.warn("Missing required fields: username or password");
-            return ResponseEntity.badRequest().body("Missing required fields");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Authentication failed: Username and password are required");
+            errorResponse.put("code", "MISSING_CREDENTIALS");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         Optional<User> userOpt = userRepository.findByUsername(username);
@@ -44,13 +48,19 @@ public class LoginController {
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
             LOG.info("User logged in: {}", username);
             String token = jwtService.generateToken(username);
-            Map<String, String> response = new HashMap<>();
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Authentication successful");
             response.put("token", token);
-            response.put("message", "Login successful");
+            response.put("username", username);
             return ResponseEntity.ok(response);
         } else {
             LOG.warn("Invalid login attempt for username: {}", username);
-            return ResponseEntity.status(401).body("Invalid credentials");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Authentication failed: Invalid username or password");
+            errorResponse.put("code", "INVALID_CREDENTIALS");
+            return ResponseEntity.status(401).body(errorResponse);
         }
     }
 }

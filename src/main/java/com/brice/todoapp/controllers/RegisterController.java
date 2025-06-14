@@ -1,5 +1,6 @@
 package com.brice.todoapp.controllers;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -33,38 +34,58 @@ public class RegisterController {
     }
 
     @PostMapping("/api/register")
-    public ResponseEntity<String> register(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> register(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
         String password = payload.get("password");
         String email = payload.get("email");
 
         if (username == null || password == null) {
             LOG.warn("Missing required fields: username or password");
-            return ResponseEntity.badRequest().body("Missing required fields");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Registration failed: Username and password are required");
+            errorResponse.put("code", "MISSING_CREDENTIALS");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Check if username contains spaces
         if (username.contains(" ")) {
             LOG.warn("Username contains spaces: {}", username);
-            return ResponseEntity.badRequest().body("Username cannot contain spaces");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Registration failed: Username cannot contain spaces");
+            errorResponse.put("code", "INVALID_USERNAME_FORMAT");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Check if username already exists
         if (userRepository.findByUsername(username).isPresent()) {
             LOG.warn("Username already exists: {}", username);
-            return ResponseEntity.badRequest().body("Username already exists");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Registration failed: Username is already taken");
+            errorResponse.put("code", "USERNAME_EXISTS");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Validate email format if provided
         if (email != null && !EMAIL_REGEX.matcher(email).matches()) {
             LOG.warn("Invalid email format: {}", email);
-            return ResponseEntity.badRequest().body("Invalid email format");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Registration failed: Invalid email format");
+            errorResponse.put("code", "INVALID_EMAIL_FORMAT");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Check if email already exists (only if provided)
         if (email != null && userRepository.findByEmail(email).isPresent()) {
             LOG.warn("Email already exists: {}", email);
-            return ResponseEntity.badRequest().body("Email already exists");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Registration failed: Email is already registered");
+            errorResponse.put("code", "EMAIL_EXISTS");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         // Hash the password before saving
@@ -72,13 +93,20 @@ public class RegisterController {
 
         User user = new User();
         user.setUsername(username);
-        user.setPassword(hashedPassword); // Save the hashed password
-        user.setEmail(email); // Email can be null
+        user.setPassword(hashedPassword);
+        user.setEmail(email);
 
         userRepository.save(user);
 
         LOG.info("User registered: {}", username);
-        return ResponseEntity.ok("User registered: " + username);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "Registration successful");
+        response.put("username", username);
+        if (email != null) {
+            response.put("email", email);
+        }
+        return ResponseEntity.ok(response);
     }
 
 }
