@@ -1,0 +1,34 @@
+# ================================
+# Spring Boot Docker Ignore File
+# ================================
+
+# Maven
+target/
+!target/*.jar
+!target/**/lib/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Logs
+*.log
+
+# UI build artifacts (since UI has its own Dockerfile)
+src/ui/**

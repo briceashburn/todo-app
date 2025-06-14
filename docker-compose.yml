@@ -1,0 +1,62 @@
+# ================================
+# ToDoApp Docker Compose Configuration
+# ================================
+
+services:
+  # Spring Boot Backend Service
+  spring-app:
+    build:
+      context: .
+      target: runtime
+    container_name: todoapp-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      # Connect to host PostgreSQL database
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/dev
+      - SPRING_DATASOURCE_USERNAME=devappuser
+      - SPRING_DATASOURCE_PASSWORD=devbrice
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # React UI Frontend Service
+  ui:
+    build:
+      context: ./src/ui
+    container_name: todoapp-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      spring-app:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+# Network Configuration
+networks:
+  app-network:
+    name: todoapp-network
+    driver: bridge
