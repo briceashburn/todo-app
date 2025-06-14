@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import './css/HomePage.css';
 import Dashboard from './pages/Dashboard';
@@ -12,6 +12,15 @@ function HomePage({ setIsAuthenticated }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if token exists and is valid
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+      navigate('/dashboard');
+    }
+  }, [setIsAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,16 +39,17 @@ function HomePage({ setIsAuthenticated }) {
         body: JSON.stringify(body),
       });
 
-      const responseText = await response.text();
+      const data = await response.json();
 
       if (response.ok) {
         setMessage(isLogin ? 'Login successful!' : 'Account created successfully!');
         if (isLogin) {
-          setIsAuthenticated(true); // Update authentication status
-          navigate('/dashboard'); // Redirect to the dashboard
+          localStorage.setItem('token', data.token);
+          setIsAuthenticated(true);
+          navigate('/dashboard');
         }
       } else {
-        setMessage(responseText || (isLogin ? 'Invalid credentials' : 'Account creation failed'));
+        setMessage(data.message || (isLogin ? 'Invalid credentials' : 'Account creation failed'));
       }
     } catch (error) {
       console.error('Error:', error);
@@ -92,7 +102,7 @@ function HomePage({ setIsAuthenticated }) {
 }
 
 export default function AppWrapper() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Track authentication globally
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
     <Router>
@@ -101,8 +111,8 @@ export default function AppWrapper() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <Dashboard />
+            <ProtectedRoute isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated}>
+              <Dashboard setIsAuthenticated={setIsAuthenticated} />
             </ProtectedRoute>
           }
         />
