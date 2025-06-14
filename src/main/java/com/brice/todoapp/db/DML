@@ -1,0 +1,4 @@
+INSERT INTO todoapp.users (username, password, email, role)
+VALUES ('admin', 'password', 'admin@example.com', 'admin');
+INSERT INTO todoapp.users (username, password, email, role)
+VALUES ('user', 'password', 'user@example.com', 'user');

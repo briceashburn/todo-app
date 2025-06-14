@@ -1,0 +1,9 @@
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,                -- Unique identifier for each user
+    username VARCHAR(255) UNIQUE NOT NULL, -- Username, must be unique
+    password VARCHAR(255) NOT NULL,        -- Plaintext password (for POC)
+    email VARCHAR(255) UNIQUE,             -- Optional: Email address, should be unique if used
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of account creation
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of last account update
+    role VARCHAR(50) DEFAULT 'user'        -- Role of the user ('admin', 'user', etc.)
+);
