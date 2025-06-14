@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import './css/App.css';
+import './css/HomePage.css';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './security/ProtectedRoute';
 
-function App({ setIsAuthenticated }) {
+function HomePage({ setIsAuthenticated }) {
   const API_BASE_URL = 'http://localhost:8080';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -52,38 +52,32 @@ function App({ setIsAuthenticated }) {
       <header className="App-header">
         <h2>{isLogin ? 'Login' : 'Create Account'}</h2>
         <form onSubmit={handleSubmit}>
-          <div>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
           {!isLogin && (
-            <div>
-              <input
-                type="email"
-                placeholder="Email (optional)"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          )}
-          <div>
             <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              type="email"
+              placeholder="Email (optional)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-          </div>
+          )}
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
           <button type="submit">{isLogin ? 'Login' : 'Create Account'}</button>
         </form>
         <button
-          style={{ marginTop: '1rem', background: 'none', color: '#61dafb', border: 'none', cursor: 'pointer' }}
+          className="toggle"
           onClick={() => {
             setIsLogin(!isLogin);
             setMessage('');
@@ -103,7 +97,7 @@ export default function AppWrapper() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<App setIsAuthenticated={setIsAuthenticated} />} />
+        <Route path="/" element={<HomePage setIsAuthenticated={setIsAuthenticated} />} />
         <Route
           path="/dashboard"
           element={
