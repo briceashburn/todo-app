@@ -4,42 +4,47 @@ import { todoService } from '../services/todoService';
 import '../css/Dashboard.css';
 
 function Dashboard({ setIsAuthenticated }) {
-  const [newTodo, setNewTodo] = useState('');
-  const [todos, setTodos] = useState({
-    new: [],
+  const [newTask, setNewTask] = useState('');
+  const [tasks, setTasks] = useState({
+    todo: [],
     inProgress: [],
-    done: []
+    completed: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load todos from backend when component mounts
+  // Load tasks from backend when component mounts
   useEffect(() => {
-    const initLoadTodos = async () => {
+    const initLoadTasks = async () => {
       try {
         setLoading(true);
         const response = await todoService.getTodos();
         if (response.status === 'success') {
-          // Group todos by status
-          const groupedTodos = {
-            new: [],
+          // Group tasks by status
+          const groupedTasks = {
+            todo: [],
             inProgress: [],
-            done: []
+            completed: []
           };
           
           response.todos.forEach(todo => {
-            if (groupedTodos[todo.status]) {
-              groupedTodos[todo.status].push({
+            let status = todo.status;
+            // Map backend status to frontend status
+            if (status === 'new') status = 'todo';
+            // Backend now uses 'completed' directly
+            
+            if (groupedTasks[status]) {
+              groupedTasks[status].push({
                 id: todo.id,
                 text: todo.title
               });
             }
           });
           
-          setTodos(groupedTodos);
+          setTasks(groupedTasks);
         }
       } catch (error) {
-        console.error('Error loading todos:', error);
+        console.error('Error loading tasks:', error);
         if (error.message.includes('Authentication failed') || error.message.includes('User not authenticated')) {
           localStorage.removeItem('token');
           setIsAuthenticated(false);
@@ -51,46 +56,46 @@ function Dashboard({ setIsAuthenticated }) {
       }
     };
 
-    initLoadTodos();
+    initLoadTasks();
   }, [setIsAuthenticated]);
 
-  const addTodo = async (e) => {
+  const addTask = async (e) => {
     e.preventDefault();
-    if (!newTodo.trim()) return;
+    if (!newTask.trim()) return;
     
     try {
       const response = await todoService.createTodo({
-        title: newTodo,
+        title: newTask,
         status: 'new',
         positionOrder: 0
       });
 
       if (response.status === 'success') {
-        const todo = {
+        const task = {
           id: response.todo.id,
           text: response.todo.title,
         };
         
-        setTodos(prev => ({
+        setTasks(prev => ({
           ...prev,
-          new: [...prev.new, todo]
+          todo: [...prev.todo, task]
         }));
-        setNewTodo('');
+        setNewTask('');
         setError(null);
       }
     } catch (error) {
-      console.error('Error creating todo:', error);
+      console.error('Error creating task:', error);
       if (error.message.includes('Authentication failed') || error.message.includes('User not authenticated')) {
         localStorage.removeItem('token');
         setIsAuthenticated(false);
       } else {
-        setError('Failed to create todo');
+        setError('Failed to create task');
       }
     }
   };
 
-  const handleDragStart = (e, todoId, sourceColumn) => {
-    e.dataTransfer.setData('todoId', todoId);
+  const handleDragStart = (e, taskId, sourceColumn) => {
+    e.dataTransfer.setData('taskId', taskId);
     e.dataTransfer.setData('sourceColumn', sourceColumn);
   };
 
@@ -100,89 +105,104 @@ function Dashboard({ setIsAuthenticated }) {
 
   const handleDrop = async (e, targetColumn) => {
     e.preventDefault();
-    const todoId = parseInt(e.dataTransfer.getData('todoId'));
+    const taskId = parseInt(e.dataTransfer.getData('taskId'));
     const sourceColumn = e.dataTransfer.getData('sourceColumn');
 
     if (sourceColumn === targetColumn) return;
 
     try {
-      // Find the todo in the source column
-      const todo = todos[sourceColumn].find(t => t.id === todoId);
-      if (!todo) return;
+      // Find the task in the source column
+      const task = tasks[sourceColumn].find(t => t.id === taskId);
+      if (!task) return;
 
-      // Update the todo's status in the backend
-      const response = await todoService.updateTodo(todoId, {
-        title: todo.text,
-        status: targetColumn,
+      // Map frontend status to backend status
+      let backendStatus = targetColumn;
+      if (targetColumn === 'todo') backendStatus = 'new';
+      // Frontend 'completed' maps directly to backend 'completed'
+
+      // Update the task's status in the backend
+      const response = await todoService.updateTodo(taskId, {
+        title: task.text,
+        status: backendStatus,
         positionOrder: 0
       });
 
       if (response.status === 'success') {
         // Update the local state only if backend update succeeds
-        setTodos(prev => ({
+        setTasks(prev => ({
           ...prev,
-          [sourceColumn]: prev[sourceColumn].filter(t => t.id !== todoId),
-          [targetColumn]: [...prev[targetColumn], todo]
+          [sourceColumn]: prev[sourceColumn].filter(t => t.id !== taskId),
+          [targetColumn]: [...prev[targetColumn], task]
         }));
         setError(null);
       }
     } catch (error) {
-      console.error('Error updating todo status:', error);
+      console.error('Error updating task status:', error);
       if (error.message.includes('Authentication failed') || error.message.includes('User not authenticated')) {
         localStorage.removeItem('token');
         setIsAuthenticated(false);
       } else {
-        setError('Failed to update todo status');
+        setError('Failed to update task status');
       }
     }
   };
 
-  const deleteTodo = async (id, column) => {
+  const deleteTask = async (id, column) => {
     try {
       const response = await todoService.deleteTodo(id);
       
       if (response.status === 'success') {
-        setTodos(prev => ({
+        setTasks(prev => ({
           ...prev,
-          [column]: prev[column].filter(todo => todo.id !== id)
+          [column]: prev[column].filter(task => task.id !== id)
         }));
         setError(null);
       }
     } catch (error) {
-      console.error('Error deleting todo:', error);
+      console.error('Error deleting task:', error);
       if (error.message.includes('Authentication failed') || error.message.includes('User not authenticated')) {
         localStorage.removeItem('token');
         setIsAuthenticated(false);
       } else {
-        setError('Failed to delete todo');
+        setError('Failed to delete task');
       }
     }
   };
 
-  const renderColumn = (title, columnKey) => (
+  const renderColumn = (title, columnKey, icon) => (
     <div 
-      className="kanban-column"
+      className={`board-column ${columnKey}-column`}
       onDragOver={handleDragOver}
       onDrop={(e) => handleDrop(e, columnKey)}
     >
-      <h2>{title}</h2>
-      <div className="todo-list">
-        {todos[columnKey].map(todo => (
+      <div className="column-header">
+        <span className="column-icon">{icon}</span>
+        <h3 className="column-title">{title}</h3>
+        <span className="task-count">{tasks[columnKey].length}</span>
+      </div>
+      <div className="task-list">
+        {tasks[columnKey].map(task => (
           <div
-            key={todo.id}
-            className="todo-item"
+            key={task.id}
+            className="task-card"
             draggable
-            onDragStart={(e) => handleDragStart(e, todo.id, columnKey)}
+            onDragStart={(e) => handleDragStart(e, task.id, columnKey)}
           >
-            <span className="todo-text">{todo.text}</span>
+            <span className="task-text">{task.text}</span>
             <button
-              onClick={() => deleteTodo(todo.id, columnKey)}
-              className="delete-todo-btn"
+              onClick={() => deleteTask(task.id, columnKey)}
+              className="delete-task-btn"
+              title="Delete task"
             >
-              Delete
+              ×
             </button>
           </div>
         ))}
+        {tasks[columnKey].length === 0 && (
+          <div className="empty-column">
+            <p>No tasks yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -190,50 +210,45 @@ function Dashboard({ setIsAuthenticated }) {
   return (
     <>
       <NavBar setIsAuthenticated={setIsAuthenticated} />
-      <div className="dashboard-container">
-        <h1>My Kanban Board</h1>
+      <div className="workspace-container">
+        <div className="workspace-header">
+          <h1 className="workspace-title">My Workspace</h1>
+          <p className="workspace-subtitle">Organize your tasks and boost productivity</p>
+        </div>
         
         {error && (
-          <div className="error-message" style={{
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
-            padding: '10px',
-            borderRadius: '4px',
-            marginBottom: '20px',
-            border: '1px solid #f5c6cb'
-          }}>
-            {error}
+          <div className="error-banner">
+            <span className="error-icon">⚠️</span>
+            <span className="error-text">{error}</span>
           </div>
         )}
         
-        <form className="todo-form" onSubmit={addTodo}>
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            placeholder="Add a new task..."
-            className="todo-input"
-            disabled={loading}
-          />
-          <button type="submit" className="add-todo-btn" disabled={loading}>
-            {loading ? 'Adding...' : 'Add Task'}
-          </button>
+        <form className="task-form" onSubmit={addTask}>
+          <div className="task-input-container">
+            <input
+              type="text"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              placeholder="What needs to be done?"
+              className="task-input"
+              disabled={loading}
+            />
+            <button type="submit" className="add-task-btn" disabled={loading}>
+              {loading ? '...' : '+ Add Task'}
+            </button>
+          </div>
         </form>
 
         {loading ? (
-          <div className="loading-message" style={{
-            textAlign: 'center',
-            padding: '20px',
-            fontSize: '16px',
-            color: '#666'
-          }}>
-            Loading todos...
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Loading your workspace...</p>
           </div>
         ) : (
-          <div className="kanban-board">
-            {renderColumn('New', 'new')}
-            {renderColumn('In Progress', 'inProgress')}
-            {renderColumn('Done', 'done')}
+          <div className="task-board">
+            {renderColumn('To Do', 'todo', '📝')}
+            {renderColumn('In Progress', 'inProgress', '⚡')}
+            {renderColumn('Completed', 'completed', '✅')}
           </div>
         )}
       </div>

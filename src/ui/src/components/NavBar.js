@@ -12,11 +12,19 @@ function NavBar({ setIsAuthenticated }) {
     };
 
     return (
-        <nav className="navbar">
-            <div className="navbar-brand">ToDoApp</div>
-            <button className="logout-button" onClick={handleLogout}>
-                Logout
-            </button>
+        <nav className="top-navbar">
+            <div className="navbar-content">
+                <div className="brand-section">
+                    <div className="brand-logo">📋</div>
+                    <span className="brand-name">TaskFlow</span>
+                </div>
+                <div className="navbar-actions">
+                    <button className="logout-btn" onClick={handleLogout}>
+                        <span className="logout-icon">👋</span>
+                        Sign Out
+                    </button>
+                </div>
+            </div>
         </nav>
     );
 }

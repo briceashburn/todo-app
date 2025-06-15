@@ -80,57 +80,80 @@ function HomePage({ setIsAuthenticated }) {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h2>{isLogin ? 'Login' : 'Create Account'}</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              if (!isLogin && e.target.value.includes(' ')) {
-                setMessage('Username cannot contain spaces');
-              } else {
-                setMessage('');
-              }
-            }}
-            pattern="\S+"
-            title="Username cannot contain spaces"
-            required
-          />
-          {!isLogin && (
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h1 className="brand-title">TaskFlow</h1>
+          <h2 className="auth-title">{isLogin ? 'Welcome Back' : 'Join TaskFlow'}</h2>
+          <p className="auth-subtitle">
+            {isLogin ? 'Sign in to your workspace' : 'Create your productivity workspace'}
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="input-group">
             <input
-              type="email"
-              placeholder="Email (optional)"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (!isLogin && e.target.value.includes(' ')) {
+                  setMessage('Username cannot contain spaces');
+                } else {
+                  setMessage('');
+                }
+              }}
+              pattern="\S+"
+              title="Username cannot contain spaces"
+              required
+              className="auth-input"
             />
+          </div>
+          {!isLogin && (
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Email (optional)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="auth-input"
+              />
+            </div>
           )}
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit">{isLogin ? 'Login' : 'Create Account'}</button>
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="auth-input"
+            />
+          </div>
+          <button type="submit" className="primary-btn">
+            {isLogin ? 'Sign In' : 'Create Account'}
+          </button>
         </form>
-        <button
-          className="toggle"
-          onClick={() => {
-            setIsLogin(!isLogin);
-            setMessage('');
-            setUsername('');
-            setPassword('');
-            setEmail('');
-          }}
-        >
-          {isLogin ? 'Create an account' : 'Back to login'}
-        </button>
-        {message && <p className={message.includes('success') ? 'success-message' : 'error-message'}>{message}</p>}
-      </header>
+        <div className="auth-toggle">
+          <button
+            className="toggle-btn"
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setMessage('');
+              setUsername('');
+              setPassword('');
+              setEmail('');
+            }}
+          >
+            {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+          </button>
+        </div>
+        {message && (
+          <div className={`message ${message.includes('success') ? 'success-message' : 'error-message'}`}>
+            {message}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

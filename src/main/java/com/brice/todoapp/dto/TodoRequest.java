@@ -10,7 +10,7 @@ public class TodoRequest {
     @Size(max = 500, message = "Title cannot exceed 500 characters")
     private String title;
 
-    @Pattern(regexp = "^(new|inProgress|done)$", message = "Status must be 'new', 'inProgress', or 'done'")
+    @Pattern(regexp = "^(new|inProgress|completed)$", message = "Status must be 'new', 'inProgress', or 'completed'")
     private String status = "new";
 
     private Integer positionOrder = 0;
