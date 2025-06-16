@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,12 +52,13 @@ public class TodoController {
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> createTodo(@Valid @RequestBody TodoRequest request) {
+        LOG.info("Creating todo for user: {}, title: {}", getCurrentUsername(), request.getTitle());
         try {
             String username = getCurrentUsername();
             Optional<User> userOpt = userRepository.findByUsername(username);
 
             if (userOpt.isEmpty()) {
-                LOG.error("User not found: {}", username);
+                LOG.warn("User not found during todo creation: {}", username);
                 return createErrorResponse("User not found", 404);
             }
 
@@ -71,7 +71,7 @@ public class TodoController {
             Todo savedTodo = todoRepository.save(todo);
             TodoResponse response = convertToResponse(savedTodo);
 
-            LOG.info("Todo created for user {}: {}", username, savedTodo.getId());
+            LOG.info("Todo created successfully for user {}: id={}, title={}", username, savedTodo.getId(), savedTodo.getTitle());
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put(STATUS_KEY, STATUS_SUCCESS);
             successResponse.put(MESSAGE_KEY, "Todo created successfully");
@@ -87,12 +87,15 @@ public class TodoController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getTodos() {
+        LOG.info("Fetching todos for user: {}", getCurrentUsername());
         try {
             String username = getCurrentUsername();
             List<Todo> todos = todoRepository.findByUsernameOrderByPositionOrderAsc(username);
             List<TodoResponse> todoResponses = todos.stream()
                     .map(this::convertToResponse)
-                    .collect(Collectors.toList());
+                    .toList();
+
+            LOG.info("Retrieved {} todos for user: {}", todos.size(), username);
 
             Map<String, Object> response = new HashMap<>();
             response.put(STATUS_KEY, STATUS_SUCCESS);
@@ -101,23 +104,27 @@ public class TodoController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            LOG.error("Error fetching todos", e);
+            LOG.error("Error fetching todos for user: {}", getCurrentUsername(), e);
             return createErrorResponse("Failed to fetch todos", 500);
         }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateTodo(@PathVariable Long id, @Valid @RequestBody TodoRequest request) {
+        LOG.info("Updating todo {} for user: {}", id, getCurrentUsername());
         try {
             String username = getCurrentUsername();
             Optional<Todo> todoOpt = todoRepository.findById(id);
 
             if (todoOpt.isEmpty()) {
+                LOG.warn("Todo not found for update: id={}, user={}", id, username);
                 return createErrorResponse("Todo not found", 404);
             }
 
             Todo todo = todoOpt.get();
             if (!todo.getUser().getUsername().equals(username)) {
+                LOG.warn("Unauthorized access attempt to update todo: id={}, user={}, owner={}", 
+                         id, username, todo.getUser().getUsername());
                 return createErrorResponse("Unauthorized access", 403);
             }
 
@@ -129,7 +136,7 @@ public class TodoController {
             Todo updatedTodo = todoRepository.save(todo);
             TodoResponse response = convertToResponse(updatedTodo);
 
-            LOG.info("Todo updated for user {}: {}", username, id);
+            LOG.info("Todo updated successfully for user {}: id={}, title={}", username, id, updatedTodo.getTitle());
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put(STATUS_KEY, STATUS_SUCCESS);
             successResponse.put(MESSAGE_KEY, "Todo updated successfully");
@@ -138,29 +145,33 @@ public class TodoController {
             return ResponseEntity.ok(successResponse);
 
         } catch (Exception e) {
-            LOG.error("Error updating todo", e);
+            LOG.error("Error updating todo: id={}, user={}", id, getCurrentUsername(), e);
             return createErrorResponse("Failed to update todo", 500);
         }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteTodo(@PathVariable Long id) {
+        LOG.info("Deleting todo {} for user: {}", id, getCurrentUsername());
         try {
             String username = getCurrentUsername();
             Optional<Todo> todoOpt = todoRepository.findById(id);
 
             if (todoOpt.isEmpty()) {
+                LOG.warn("Todo not found for deletion: id={}, user={}", id, username);
                 return createErrorResponse("Todo not found", 404);
             }
 
             Todo todo = todoOpt.get();
             if (!todo.getUser().getUsername().equals(username)) {
+                LOG.warn("Unauthorized access attempt to delete todo: id={}, user={}, owner={}", 
+                         id, username, todo.getUser().getUsername());
                 return createErrorResponse("Unauthorized access", 403);
             }
 
             todoRepository.delete(todo);
 
-            LOG.info("Todo deleted for user {}: {}", username, id);
+            LOG.info("Todo deleted successfully for user {}: id={}, title={}", username, id, todo.getTitle());
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put(STATUS_KEY, STATUS_SUCCESS);
             successResponse.put(MESSAGE_KEY, "Todo deleted successfully");
@@ -168,7 +179,7 @@ public class TodoController {
             return ResponseEntity.ok(successResponse);
 
         } catch (Exception e) {
-            LOG.error("Error deleting todo", e);
+            LOG.error("Error deleting todo: id={}, user={}", id, getCurrentUsername(), e);
             return createErrorResponse("Failed to delete todo", 500);
         }
     }
