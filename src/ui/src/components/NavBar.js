@@ -17,7 +17,7 @@ function NavBar({ setIsAuthenticated }) {
             <div className="navbar-content">
                 <div className="brand-section">
                     <div className="brand-logo">📋</div>
-                    <span className="brand-name">TaskFlow</span>
+                    <span className="brand-name">MinimaList</span>
                 </div>
                 <div className="navbar-actions">
                     <ThemeToggle />

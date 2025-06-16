@@ -87,8 +87,8 @@ function HomePage({ setIsAuthenticated }) {
       </div>
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="brand-title">TaskFlow</h1>
-          <h2 className="auth-title">{isLogin ? 'Welcome Back' : 'Join TaskFlow'}</h2>
+          <h1 className="brand-title">MinimaList</h1>
+          <h2 className="auth-title">{isLogin ? 'Welcome Back' : 'Join MinimaList'}</h2>
           <p className="auth-subtitle">
             {isLogin ? 'Sign in to your workspace' : 'Create your productivity workspace'}
           </p>
