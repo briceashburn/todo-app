@@ -1,6 +1,7 @@
 {
-  "name": "ui",
+  "name": "taskflow-ui",
   "version": "0.1.0",
+  "description": "Modern task management application frontend built with React",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
