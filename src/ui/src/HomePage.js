@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { authService } from './services/authService';
 import './css/HomePage.css';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './security/ProtectedRoute';
 
 function HomePage({ setIsAuthenticated }) {
-  const API_BASE_URL = 'http://localhost:8080';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -32,50 +32,50 @@ function HomePage({ setIsAuthenticated }) {
       return;
     }
 
-    const endpoint = isLogin ? '/api/login' : '/api/register';
     let body = { username, password };
     if (!isLogin && email) {
       body.email = email;
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage(isLogin ? 'Login successful!' : 'Account created successfully!');
-        if (isLogin) {
-          localStorage.setItem('token', data.token);
-          setIsAuthenticated(true);
-          navigate('/dashboard');
-        } else {
-          // After successful registration, switch to login view
-          setIsLogin(true);
-          setUsername('');
-          setPassword('');
-          setEmail('');
-          setMessage('Account created successfully! Please log in.');
-        }
+      let data;
+      if (isLogin) {
+        data = await authService.login(body);
       } else {
+        data = await authService.register(body);
+      }
+
+      setMessage(isLogin ? 'Login successful!' : 'Account created successfully!');
+      if (isLogin) {
+        localStorage.setItem('token', data.token);
+        setIsAuthenticated(true);
+        navigate('/dashboard');
+      } else {
+        // After successful registration, switch to login view
+        setIsLogin(true);
+        setUsername('');
+        setPassword('');
+        setEmail('');
+        setMessage('Account created successfully! Please log in.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      
+      if (error.response) {
         // Handle validation errors from the server
+        const data = error.response.data;
         if (data.message) {
           setMessage(data.message);
-        } else if (response.status === 400 && data.errors) {
+        } else if (error.response.status === 400 && data.errors) {
           // Handle detailed validation errors
           const errorMessages = data.errors.map(error => error.defaultMessage).join(', ');
           setMessage(errorMessages);
         } else {
           setMessage(isLogin ? 'Invalid credentials' : 'Account creation failed');
         }
+      } else {
+        setMessage('Error connecting to server');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      setMessage('Error connecting to server');
     }
   };
 

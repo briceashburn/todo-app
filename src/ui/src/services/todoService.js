@@ -1,33 +1,9 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
-// Get token from localStorage
-const getAuthToken = () => {
-  return localStorage.getItem('token');
-};
+import apiClient from './api';
 
 // Check if user is authenticated
 const isAuthenticated = () => {
-  const token = getAuthToken();
+  const token = localStorage.getItem('token');
   return token !== null && token !== undefined && token.trim() !== '';
-};
-
-// Common headers for API requests
-const getHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
-
-// Handle authentication errors
-const handleAuthError = (response) => {
-  if (response.status === 401 || response.status === 403) {
-    // Clear invalid token and redirect to login
-    localStorage.removeItem('token');
-    window.location.href = '/';
-    throw new Error('Authentication failed. Please log in again.');
-  }
 };
 
 // Validate authentication before API calls
@@ -42,18 +18,8 @@ export const todoService = {
   createTodo: async (todoData) => {
     try {
       validateAuth();
-      const response = await fetch(`${API_BASE_URL}/api/todos`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(todoData)
-      });
-
-      if (!response.ok) {
-        handleAuthError(response);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.post('/api/todos', todoData);
+      return response.data;
     } catch (error) {
       console.error('Error creating todo:', error);
       throw error;
@@ -64,17 +30,8 @@ export const todoService = {
   getTodos: async () => {
     try {
       validateAuth();
-      const response = await fetch(`${API_BASE_URL}/api/todos`, {
-        method: 'GET',
-        headers: getHeaders()
-      });
-
-      if (!response.ok) {
-        handleAuthError(response);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/api/todos');
+      return response.data;
     } catch (error) {
       console.error('Error fetching todos:', error);
       throw error;
@@ -85,18 +42,8 @@ export const todoService = {
   updateTodo: async (id, todoData) => {
     try {
       validateAuth();
-      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(todoData)
-      });
-
-      if (!response.ok) {
-        handleAuthError(response);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.put(`/api/todos/${id}`, todoData);
+      return response.data;
     } catch (error) {
       console.error('Error updating todo:', error);
       throw error;
@@ -107,17 +54,8 @@ export const todoService = {
   deleteTodo: async (id) => {
     try {
       validateAuth();
-      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
-        method: 'DELETE',
-        headers: getHeaders()
-      });
-
-      if (!response.ok) {
-        handleAuthError(response);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.delete(`/api/todos/${id}`);
+      return response.data;
     } catch (error) {
       console.error('Error deleting todo:', error);
       throw error;
