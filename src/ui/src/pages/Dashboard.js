@@ -12,6 +12,8 @@ function Dashboard({ setIsAuthenticated }) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editText, setEditText] = useState('');
 
   // Load tasks from backend when component mounts
   useEffect(() => {
@@ -169,6 +171,63 @@ function Dashboard({ setIsAuthenticated }) {
     }
   };
 
+  const startEditTask = (task, column) => {
+    setEditingTask({ id: task.id, column });
+    setEditText(task.text);
+  };
+
+  const cancelEdit = () => {
+    setEditingTask(null);
+    setEditText('');
+  };
+
+  const saveEditTask = async () => {
+    if (!editText.trim() || !editingTask) return;
+    
+    try {
+      const task = tasks[editingTask.column].find(t => t.id === editingTask.id);
+      if (!task) return;
+
+      // Map frontend status to backend status
+      let backendStatus = editingTask.column;
+      if (editingTask.column === 'todo') backendStatus = 'new';
+
+      const response = await todoService.updateTodo(editingTask.id, {
+        title: editText.trim(),
+        status: backendStatus,
+        positionOrder: 0
+      });
+
+      if (response.status === 'success') {
+        // Update the task in local state
+        setTasks(prev => ({
+          ...prev,
+          [editingTask.column]: prev[editingTask.column].map(t => 
+            t.id === editingTask.id ? { ...t, text: editText.trim() } : t
+          )
+        }));
+        setError(null);
+        cancelEdit();
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+      if (error.message.includes('Authentication failed') || error.message.includes('User not authenticated')) {
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+      } else {
+        setError('Failed to update task');
+      }
+    }
+  };
+
+  const handleEditKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      saveEditTask();
+    } else if (e.key === 'Escape') {
+      cancelEdit();
+    }
+  };
+
   const renderColumn = (title, columnKey, icon) => (
     <div 
       className={`board-column ${columnKey}-column`}
@@ -185,17 +244,55 @@ function Dashboard({ setIsAuthenticated }) {
           <div
             key={task.id}
             className="task-card"
-            draggable
+            draggable={!editingTask || editingTask.id !== task.id}
             onDragStart={(e) => handleDragStart(e, task.id, columnKey)}
           >
-            <span className="task-text">{task.text}</span>
-            <button
-              onClick={() => deleteTask(task.id, columnKey)}
-              className="delete-task-btn"
-              title="Delete task"
-            >
-              ×
-            </button>
+            {editingTask && editingTask.id === task.id ? (
+              <div className="task-edit-container">
+                <input
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={handleEditKeyPress}
+                  onBlur={saveEditTask}
+                  className="task-edit-input"
+                  autoFocus
+                />
+                <div className="task-edit-actions">
+                  <button
+                    onClick={saveEditTask}
+                    className="save-edit-btn"
+                    title="Save changes"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    className="cancel-edit-btn"
+                    title="Cancel editing"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span 
+                  className="task-text"
+                  onDoubleClick={() => startEditTask(task, columnKey)}
+                  title="Double-click to edit"
+                >
+                  {task.text}
+                </span>
+                <button
+                  onClick={() => deleteTask(task.id, columnKey)}
+                  className="delete-task-btn"
+                  title="Delete task"
+                >
+                  ×
+                </button>
+              </>
+            )}
           </div>
         ))}
         {tasks[columnKey].length === 0 && (
