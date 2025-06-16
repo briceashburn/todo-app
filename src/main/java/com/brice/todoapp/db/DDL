@@ -1,26 +1,60 @@
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,                -- Unique identifier for each user
-    username VARCHAR(255) UNIQUE NOT NULL, -- Username, must be unique
-    password VARCHAR(255) NOT NULL,        -- Plaintext password (for POC)
-    email VARCHAR(255) UNIQUE,             -- Optional: Email address, should be unique if used
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of account creation
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of last account update
-    role VARCHAR(50) DEFAULT 'user'        -- Role of the user ('admin', 'user', etc.)
+-- Create the user
+CREATE USER devappuser
+WITH PASSWORD 'devbrice';
+
+-- Grant usage on the schema
+GRANT USAGE ON SCHEMA todoapp TO devappuser;
+
+-- Grant all privileges on the schema
+GRANT ALL PRIVILEGES ON SCHEMA todoapp TO devappuser;
+
+-- Grant all privileges on all existing tables in the schema
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA todoapp TO devappuser;
+
+-- Grant privileges on future tables, sequences, functions, views, materialized views, and procedures
+ALTER DEFAULT PRIVILEGES IN SCHEMA todoapp
+GRANT ALL PRIVILEGES ON TABLES TO devappuser;
+
+
+CREATE TABLE todoapp.users
+(
+    id SERIAL PRIMARY KEY,
+    -- Unique identifier for each user
+    username VARCHAR(255) UNIQUE NOT NULL,
+    -- Username, must be unique
+    password VARCHAR(255) NOT NULL,
+    -- Plaintext password (for POC)
+    email VARCHAR(255) UNIQUE,
+    -- Optional: Email address, should be unique if used
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Timestamp of account creation
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Timestamp of last account update
+    role VARCHAR(50) DEFAULT 'user'
+    -- Role of the user ('admin', 'user', etc.)
 );
 
 -- Todo items table
-CREATE TABLE todoapp.todos (
-id SERIAL PRIMARY KEY, -- Unique identifier for each todo
-user_id INTEGER NOT NULL, -- Reference to the user who owns this todo
-title VARCHAR(500) NOT NULL, -- Todo title/description
-status VARCHAR(50) NOT NULL DEFAULT 'new', -- Status: 'new', 'inProgress', 'completed'
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- When the todo was created
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- When the todo was last updated
-position_order INTEGER DEFAULT 0, -- For ordering within a column
+CREATE TABLE todoapp.todos
+(
+    id SERIAL PRIMARY KEY,
+    -- Unique identifier for each todo
+    user_id INTEGER NOT NULL,
+    -- Reference to the user who owns this todo
+    title VARCHAR(500) NOT NULL,
+    -- Todo title/description
+    status VARCHAR(50) NOT NULL DEFAULT 'new',
+    -- Status: 'new', 'inProgress', 'completed'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- When the todo was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- When the todo was last updated
+    position_order INTEGER DEFAULT 0,
+    -- For ordering within a column
 
--- Foreign key constraint
-CONSTRAINT fk_todos_user_id FOREIGN KEY (user_id) REFERENCES todoapp.users(id) ON DELETE CASCADE,
+    -- Foreign key constraint
+    CONSTRAINT fk_todos_user_id FOREIGN KEY (user_id) REFERENCES todoapp.users(id) ON DELETE CASCADE,
 
--- Check constraint for valid status values
-CONSTRAINT chk_todos_status CHECK (status IN ('new', 'inProgress', 'completed'))
+    -- Check constraint for valid status values
+    CONSTRAINT chk_todos_status CHECK (status IN ('new', 'inProgress', 'completed'))
 );
