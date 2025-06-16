@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { authService } from './services/authService';
+import ThemeToggle from './components/ThemeToggle';
 import './css/HomePage.css';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './security/ProtectedRoute';
@@ -81,6 +82,9 @@ function HomePage({ setIsAuthenticated }) {
 
   return (
     <div className="auth-container">
+      <div className="theme-toggle-container">
+        <ThemeToggle />
+      </div>
       <div className="auth-card">
         <div className="auth-header">
           <h1 className="brand-title">TaskFlow</h1>

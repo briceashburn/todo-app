@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 import '../css/NavBar.css';
 
 function NavBar({ setIsAuthenticated }) {
@@ -19,9 +20,10 @@ function NavBar({ setIsAuthenticated }) {
                     <span className="brand-name">TaskFlow</span>
                 </div>
                 <div className="navbar-actions">
+                    <ThemeToggle />
                     <button className="logout-btn" onClick={handleLogout}>
                         <span className="logout-icon">👋</span>
-                        Sign Out
+                        <span>Sign Out</span>
                     </button>
                 </div>
             </div>

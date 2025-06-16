@@ -1,25 +1,7 @@
-/* Modern Light Blue Dashboard Theme */
+/* Modern Dashboard Theme - Uses global CSS variables for dark/light mode */
+/* Dashboard-specific colors that work with both light and dark themes */
 :root {
-  /* Color Palette */
-  --primary: #0ea5e9;
-  --primary-hover: #0284c7;
-  --secondary: #f0f9ff;
-  --accent: #38bdf8;
-  --success: #10b981;
-  --error: #ef4444;
-  --warning: #f59e0b;
-  
-  /* Text Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  
-  /* Background Colors */
-  --bg-page: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 50%, #81d4fa 100%);
-  --bg-card: #ffffff;
-  --bg-surface: #f0f9ff;
-  
-  /* Column Colors */
+  /* Column Colors - Light mode */
   --todo-bg: #fef2f2;
   --todo-border: #f87171;
   --progress-bg: #fefce8;
@@ -27,17 +9,22 @@
   --completed-bg: #f0fdf4;
   --completed-border: #86efac;
   
-  /* Borders & Shadows */
-  --border: #e2e8f0;
-  --border-light: #f1f5f9;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  /* Background gradients - Light mode */
+  --bg-page: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 50%, #81d4fa 100%);
+}
+
+/* Dark mode dashboard colors */
+.dark-mode {
+  /* Column Colors - Dark mode */
+  --todo-bg: #7f1d1d;
+  --todo-border: #dc2626;
+  --progress-bg: #78350f;
+  --progress-border: #d97706;
+  --completed-bg: #14532d;
+  --completed-border: #16a34a;
   
-  /* Border Radius */
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* Background gradients - Dark mode */
+  --bg-page: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
 }
 
 body {
